@@ -5,7 +5,7 @@
     <string name="first_fragment_label">ESL Image Transfer</string>
     <string name="second_fragment_label">Send Image Data</string>
     <string name="next">Next</string>
-    <string name="previous">Previous</string>
+    <string name="sendimage">Send Image</string>
     <string name="scan_for_esl_devices">Scan for ESL devices</string>
 
     <string name="hello_first_fragment">written by Larry Bank</string>

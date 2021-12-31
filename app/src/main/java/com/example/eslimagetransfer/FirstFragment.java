@@ -109,20 +109,19 @@ public class FirstFragment extends Fragment {
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     final BluetoothDevice device = (BluetoothDevice) listBluetoothDevice.get(position);
                     eslDevice = device; //keep this for later
-                    String msg = device.getAddress() + "\n"
-                            + device.getBluetoothClass().toString() + "\n"
-                            + getBTDeviceType(device);
+//                    String msg = device.getAddress() + "\n"
+//                            + device.getBluetoothClass().toString() + "\n"
+//                            + getBTDeviceType(device);
 
-                    new AlertDialog.Builder(getActivity())
-                            .setTitle(device.getName())
-                            .setMessage(msg)
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                }
-                            })
-                            .show();
+ //                   new AlertDialog.Builder(getActivity())
+ //                           .setTitle(device.getName())
+ //                           .setMessage(msg)
+ //                           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+ //                               @Override
+ //                               public void onClick(DialogInterface dialog, int which) {
+//                                }
+//                            })
+//                            .show();
 
                 }
             };

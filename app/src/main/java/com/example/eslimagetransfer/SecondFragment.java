@@ -32,11 +32,10 @@ public class SecondFragment extends Fragment {
     private Context localContext;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
-    private BluetoothGattCharacteristic mCharacteristic;
-    private BluetoothLeService mService;
+    private BluetoothGattCharacteristic mCharacteristic = null;
     private boolean bConnected = false;
-    private static final UUID CUSTOM_SERVICE_UUID = UUID.fromString("13187b10-eba9-a3ba-044e-83d3217d9a38");
-    private static final UUID CUSTOM_CHARACTERISTIC_UUID = UUID.fromString("4b646063-6264-f3a7-8941-e65356ea82fe");
+    private static final UUID ESL_SERVICE_UUID = UUID.fromString("13187b10-eba9-a3ba-044e-83d3217d9a38");
+    private static final UUID ESL_CHARACTERISTIC_UUID = UUID.fromString("4b646063-6264-f3a7-8941-e65356ea82fe");
     @Override
     public View onCreateView(
             LayoutInflater inflater, ViewGroup container,
@@ -54,8 +53,43 @@ public class SecondFragment extends Fragment {
         binding.buttonSecond.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NavHostFragment.findNavController(SecondFragment.this)
-                        .navigate(R.id.action_SecondFragment_to_FirstFragment);
+                // Try sending a blank screen command
+                byte[] setBytePos = {0x02, 0x00, 0x00};
+                byte[] display = {0x01};
+                // create a 16x16 pattern of black and white squares
+                byte[] evenImg = {0x03, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1};
+                byte[] oddImg = {0x03, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00};
+                mCharacteristic.setValue(setBytePos);
+                mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                mBluetoothGatt.writeCharacteristic(mCharacteristic);
+                try {
+                    //thread to sleep for the specified number of milliseconds
+                    Thread.sleep(5);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                // Create a checker board pattern
+                for (int i=0; i<250; i++) { // send image data
+                    if ((i & 16) == 0)
+                        mCharacteristic.setValue(evenImg);
+                    else
+                        mCharacteristic.setValue(oddImg);
+                    mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                    mBluetoothGatt.writeCharacteristic(mCharacteristic);
+                    try {
+                        //thread to sleep for the specified number of milliseconds
+                        Thread.sleep(5);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } // for i
+                // show the image
+                mCharacteristic.setValue(display);
+                mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                mBluetoothGatt.writeCharacteristic(mCharacteristic);
+
+//                NavHostFragment.findNavController(SecondFragment.this)
+//                        .navigate(R.id.action_SecondFragment_to_FirstFragment);
             }
         });
         localContext = getActivity().getApplicationContext();
@@ -136,7 +170,12 @@ public class SecondFragment extends Fragment {
                 // services are discovered, find the one we want
                 final List<BluetoothGattService> services = gatt.getServices();
                 Log.i("ESLImageTransfer", String.format(Locale.ENGLISH,"discovered %d services for ESL", services.size()));
-
+                for (BluetoothGattService service : services) {
+                    if (service.getUuid().equals(ESL_SERVICE_UUID)) {
+                        service.getCharacteristics();
+                        mCharacteristic = service.getCharacteristic(ESL_CHARACTERISTIC_UUID);
+                    }
+                }
             } else {
                 Log.e("ESLImageTransfer", "Service discovery failed");
                 gatt.disconnect();

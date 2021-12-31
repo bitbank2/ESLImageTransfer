@@ -19,6 +19,8 @@
         android:id="@+id/lelist"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:choiceMode="singleChoice"
+        android:listSelector="@android:color/darker_gray"
         app:layout_constraintBottom_toTopOf="@id/button_first"
         app:layout_constraintHeight_default="percent"
         app:layout_constraintHeight_percent="0.5"
