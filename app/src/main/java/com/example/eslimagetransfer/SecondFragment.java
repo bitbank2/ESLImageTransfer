@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,6 +31,7 @@ public class SecondFragment extends Fragment {
 
     private FragmentSecondBinding binding;
     private Context localContext;
+    private Handler mHandler;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mCharacteristic = null;
@@ -50,43 +52,17 @@ public class SecondFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        mHandler = new Handler();
         binding.buttonSecond.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Try sending a blank screen command
-                byte[] setBytePos = {0x02, 0x00, 0x00};
-                byte[] display = {0x01};
-                // create a 16x16 pattern of black and white squares
-                byte[] evenImg = {0x03, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1};
-                byte[] oddImg = {0x03, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00};
-                mCharacteristic.setValue(setBytePos);
-                mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                mBluetoothGatt.writeCharacteristic(mCharacteristic);
-                try {
-                    //thread to sleep for the specified number of milliseconds
-                    Thread.sleep(5);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                // Create a checker board pattern
-                for (int i=0; i<250; i++) { // send image data
-                    if ((i & 16) == 0)
-                        mCharacteristic.setValue(evenImg);
-                    else
-                        mCharacteristic.setValue(oddImg);
-                    mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                    mBluetoothGatt.writeCharacteristic(mCharacteristic);
-                    try {
-                        //thread to sleep for the specified number of milliseconds
-                        Thread.sleep(5);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                // Stops scanning after a pre-defined scan period.
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        sendImage();
                     }
-                } // for i
-                // show the image
-                mCharacteristic.setValue(display);
-                mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                mBluetoothGatt.writeCharacteristic(mCharacteristic);
+                });
 
 //                NavHostFragment.findNavController(SecondFragment.this)
 //                        .navigate(R.id.action_SecondFragment_to_FirstFragment);
@@ -116,6 +92,44 @@ public class SecondFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
+    private void sendImage() {
+        // Try sending a blank screen command
+        byte[] setBytePos = {0x02, 0x00, 0x00};
+        byte[] display = {0x01};
+        // create a 16x16 pattern of black and white squares
+        byte[] evenImg = {0x03, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1};
+        byte[] oddImg = {0x03, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00, -1, -1, 0x00, 0x00};
+        mCharacteristic.setValue(setBytePos);
+        mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        mBluetoothGatt.writeCharacteristic(mCharacteristic);
+        try {
+            //thread to sleep for the specified number of milliseconds
+            Thread.sleep(5);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // Create a checker board pattern
+        for (int i=0; i<250; i++) { // send image data
+            if ((i & 16) == 0)
+                mCharacteristic.setValue(evenImg);
+            else
+                mCharacteristic.setValue(oddImg);
+            mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+            mBluetoothGatt.writeCharacteristic(mCharacteristic);
+            try {
+                //thread to sleep for the specified number of milliseconds
+                Thread.sleep(5);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } // for i
+        // show the image
+        mCharacteristic.setValue(display);
+        mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        mBluetoothGatt.writeCharacteristic(mCharacteristic);
+
+    } /* sendImage() */
+
     private boolean connectGatt(final String address) {
         if (mBluetoothAdapter == null || address == null) {
       //      Log.w(, "BluetoothAdapter not initialized or unspecified address.");
