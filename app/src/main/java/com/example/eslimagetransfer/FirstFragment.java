@@ -66,6 +66,7 @@ public class FirstFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        binding.buttonFirst.setEnabled(false);
         binding.buttonFirst.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -173,6 +174,7 @@ public class FirstFragment extends Fragment {
 
                     mScanning = false;
                     binding.scan.setEnabled(true);
+                    binding.buttonFirst.setEnabled(true);
                 }
             }, SCAN_PERIOD);
 
