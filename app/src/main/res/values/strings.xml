@@ -7,6 +7,7 @@
     <string name="next">Next</string>
     <string name="openimage">Open Image</string>
     <string name="sendimage">Send Image</string>
+    <string name="getweather">Get Weather</string>
     <string name="scan_for_esl_devices">Scan for ESL devices</string>
 
     <string name="hello_first_fragment">written by Larry Bank</string>

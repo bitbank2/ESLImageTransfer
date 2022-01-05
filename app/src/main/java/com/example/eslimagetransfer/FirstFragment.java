@@ -221,6 +221,7 @@ public class FirstFragment extends Fragment {
                 listBluetoothDevice.add(device);
                 listBTName.add(deviceName);
                 binding.lelist.invalidateViews();
+                binding.lelist.deferNotifyDataSetChanged();
             }
         }
     };

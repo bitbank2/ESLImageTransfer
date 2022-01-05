@@ -20,10 +20,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/openimage"
-        app:layout_constraintBottom_toTopOf="@id/button_second"
+        app:layout_constraintBottom_toTopOf="@id/button_weather"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/imageview_second" />
+    <Button
+        android:id="@+id/button_weather"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/getweather"
+        app:layout_constraintBottom_toTopOf="@id/button_second"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/button_open" />
 
     <Button
         android:id="@+id/button_second"
@@ -33,5 +42,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_open" />
+        app:layout_constraintTop_toBottomOf="@id/button_weather" />
 </androidx.constraintlayout.widget.ConstraintLayout>

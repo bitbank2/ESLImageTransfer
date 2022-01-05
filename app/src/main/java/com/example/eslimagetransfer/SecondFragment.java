@@ -12,8 +12,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,27 +32,38 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.eslimagetransfer.databinding.FragmentSecondBinding;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.List;
 import java.util.Locale;
+import java.util.Scanner;
 import java.util.UUID;
 
 public class SecondFragment extends Fragment {
 
-    private FragmentSecondBinding binding;
+    private static FragmentSecondBinding binding;
     private Context localContext;
-    private Handler mHandler;
+    private static Handler mHandler;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mCharacteristic = null;
-    private boolean bConnected = false;
-    private boolean bBitmapLoaded = false;
+    private volatile boolean bConnected = false;
+    private static boolean bBitmapLoaded = false;
     private static final UUID ESL_SERVICE_UUID = UUID.fromString("13187b10-eba9-a3ba-044e-83d3217d9a38");
     private static final UUID ESL_CHARACTERISTIC_UUID = UUID.fromString("4b646063-6264-f3a7-8941-e65356ea82fe");
     // Request code for selecting an image file.
     private static final int PICK_IMAGE_FILE = 2;
-    private Bitmap theBitmap;
+    private static Bitmap theBitmap = null;
 
     @Override
     public View onCreateView(
@@ -110,8 +123,7 @@ public class SecondFragment extends Fragment {
                 }
                 binding.imageviewSecond.setImageBitmap(theBitmap);
                 bBitmapLoaded = true;
-                if (bConnected)
-                    binding.buttonSecond.setEnabled(true);
+                binding.buttonSecond.setEnabled(true);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 Toast.makeText(localContext, "Something went wrong", Toast.LENGTH_LONG).show();
@@ -126,56 +138,69 @@ public class SecondFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         mHandler = new Handler();
+        binding.buttonOpen.setEnabled(true);
+
+        binding.buttonWeather.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Thread thread = new Thread(new Runnable() {
+                    @Override public void run() {
+                        try  {
+                            String site = "https://wttr.in/?format=j1";
+                            URL myURL = new URL(site);
+                            String s = getResponseFromHttpUrl(myURL);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                thread.start();
+            }
+        });
+
         binding.buttonOpen.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("image/*");
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
 
                     // Optionally, specify a URI for the file that should appear in the
                     // system file picker when it loads.
                     //intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri);
 
-                    startActivityForResult(intent, PICK_IMAGE_FILE);
+                startActivityForResult(intent, PICK_IMAGE_FILE);
             }
         });
         binding.buttonSecond.setEnabled(false);
         binding.buttonSecond.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Stops scanning after a pre-defined scan period.
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        sendImage();
-                    }
-                });
-
+                Toast.makeText(localContext,
+                        "Connecting to ESL...",
+                        Toast.LENGTH_LONG).show();
+                if (connectGatt(FirstFragment.eslDevice.getAddress())) {
+                    mBluetoothGatt.discoverServices();
+                    Toast.makeText(localContext,
+                            "Connected!",
+                            Toast.LENGTH_LONG).show();
+                    bConnected = true;
+                } else {
+                    Toast.makeText(localContext,
+                            "Connection failed!",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
 //                NavHostFragment.findNavController(SecondFragment.this)
 //                        .navigate(R.id.action_SecondFragment_to_FirstFragment);
             }
         });
         localContext = getActivity().getApplicationContext();
 
-        Toast.makeText(localContext,
-                "Connecting to ESL...",
-                Toast.LENGTH_LONG).show();
         // Get BluetoothAdapter
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) localContext.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-        if (connectGatt(FirstFragment.eslDevice.getAddress())) {
-            mBluetoothGatt.discoverServices();
-            Toast.makeText(localContext,
-                    "Connected!",
-                    Toast.LENGTH_LONG).show();
-            bConnected = true;
-            if (bBitmapLoaded)
-                binding.buttonSecond.setEnabled(true);
-  //          mBluetoothGatt.discoverServices();
-        }
     } /* onViewCreated() */
 
     @Override
@@ -183,6 +208,80 @@ public class SecondFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
+    /**
+     * Gets the response from http Url request
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    private static String getResponseFromHttpUrl(URL url) throws IOException {
+
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.addRequestProperty("Accept","application/json");
+        connection.addRequestProperty("Content-Type","application/json");
+//        connection.addRequestProperty("Authorization","Bearer <spotify api key>");
+
+        try {
+            InputStream in = connection.getInputStream();
+
+            Scanner scanner = new Scanner(in);
+            scanner.useDelimiter("\\A");
+
+            boolean hasInput = scanner.hasNext();
+            if (hasInput) {
+                String s = scanner.next();
+                try {
+                    Calendar calendar=Calendar.getInstance();
+                    DateFormat df = new SimpleDateFormat("EEEE, MMMM d, yyyy");
+                    String sLocalTime = df.format(calendar.getTimeInMillis());
+                    JSONObject jObject = new JSONObject(s);
+                    JSONArray cc = jObject.getJSONArray("current_condition");
+                    JSONObject current_condition = cc.getJSONObject(0);
+                    JSONArray cw = jObject.getJSONArray("weather");
+                    JSONObject weather = cw.getJSONObject(0);
+                    String sTemp = current_condition.getString("temp_C");
+                    String sHum = current_condition.getString("humidity");
+                    JSONArray cca = current_condition.getJSONArray("weatherDesc");
+                    JSONObject cco = cca.getJSONObject(0);
+                    String sDesc = cco.getString("value");
+                    String sMinTemp = weather.getString("mintempC");
+                    String sMaxTemp = weather.getString("maxtempC");
+                    String sWind = current_condition.getString("windspeedKmph");
+                    theBitmap = Bitmap.createBitmap(
+                            250, 122, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(theBitmap);
+                    Paint paint = new Paint();
+                    paint.setAntiAlias(false);
+                    theBitmap.eraseColor(Color.WHITE);
+                    paint.setColor(Color.BLACK);
+                    paint.setTextSize(20);
+                    canvas.drawText(sLocalTime, 0, 20, paint);
+                    paint.setTextSize(24);
+                    canvas.drawText("Temp: " + sTemp + "C (" + sMinTemp + "/" + sMaxTemp + ")", 0, 48, paint);
+                    canvas.drawText("Wind: " + sWind + "kph H: " + sHum + "%", 0, 86, paint);
+                    canvas.drawText(sDesc, 0, 116, paint);
+                    mHandler.post(new Runnable() {
+                        public void run() {
+                            try{
+                                // **Do the GUI work here**
+                                bBitmapLoaded = true;
+                                binding.imageviewSecond.setImageBitmap(theBitmap);
+                                binding.buttonSecond.setEnabled(true);
+                            } catch (Exception e) { }
+                        }});
+                } catch (Exception e) {
+
+                }
+                return s;
+            } else {
+                return null;
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
     private void sendImage() {
         // Try sending a blank screen command
         byte[] setBytePos = {0x02, 0x00, 0x00};
@@ -205,7 +304,7 @@ public class SecondFragment extends Fragment {
             byte bPixels = 0;
             int pixel, off = 1;
             for (int y=0; y<122; y++) {
-                pixel = theBitmap.getPixel(x, y);
+                pixel = theBitmap.getPixel(x, y) & 0xffffff; // mask off alpha
                 if (pixel != 0)
                     bPixels |= bMasks[y & 7];
                 if ((y & 7) == 7) { // time to write the completed byte
@@ -289,6 +388,17 @@ public class SecondFragment extends Fragment {
                     if (service.getUuid().equals(ESL_SERVICE_UUID)) {
                         service.getCharacteristics();
                         mCharacteristic = service.getCharacteristic(ESL_CHARACTERISTIC_UUID);
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                sendImage();
+                                // shut down this fragment's activity until we re-scan + re-connect
+                                mBluetoothGatt.disconnect();
+                                mBluetoothGatt.close();
+                                binding.buttonSecond.setEnabled(false);
+                                binding.buttonOpen.setEnabled(false);
+                            }
+                        });
                     }
                 }
             } else {
