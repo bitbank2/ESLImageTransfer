@@ -16,6 +16,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -64,6 +65,7 @@ public class SecondFragment extends Fragment {
     // Request code for selecting an image file.
     private static final int PICK_IMAGE_FILE = 2;
     private static Bitmap theBitmap = null;
+    private static Bitmap bmFont24, bmFont16;
 
     @Override
     public View onCreateView(
@@ -72,9 +74,32 @@ public class SecondFragment extends Fragment {
     ) {
 
         binding = FragmentSecondBinding.inflate(inflater, container, false);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inScaled = false;
+        options.inDither = false;
+        bmFont24 = BitmapFactory.decodeResource(getResources(), R.drawable.arial_16x24_1bpp, options);
+        bmFont16 = BitmapFactory.decodeResource(getResources(), R.drawable.font12x16, options);
         return binding.getRoot();
 
     }
+
+    private static void DrawBMFont(Bitmap bm, int x, int y, String s, Bitmap bmFont) {
+        Canvas canvas = new Canvas(bm);
+        Rect src, dst;
+        Paint paint = new Paint();
+        int cx, cy;
+        cx = bmFont.getWidth() / 16; // bitmap font sources are 16 cols x 6 rows of characters
+        cy = bmFont.getHeight()/6;
+        for (int i=0; i<s.length() && x < bm.getWidth(); i++) {
+            int c = (int)s.charAt(i) - 32;
+            int sx = (c & 15) * cx; // source x of the character
+            int sy = (c / 16) * cy; // source y of the character
+            src = new Rect(sx, sy, sx+cx, sy+cy);
+            dst = new Rect(x, y, x+cx, y + cy);
+            canvas.drawBitmap(bmFont, src, dst, paint);
+            x += cx;
+        }
+    } /* DrawBMFont() */
 
     private Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
         int width = bm.getWidth();
@@ -233,13 +258,17 @@ public class SecondFragment extends Fragment {
                 String s = scanner.next();
                 try {
                     Calendar calendar=Calendar.getInstance();
-                    DateFormat df = new SimpleDateFormat("EEEE, MMMM d, yyyy");
+                    DateFormat df = new SimpleDateFormat("EEEE d/M/yy");
                     String sLocalTime = df.format(calendar.getTimeInMillis());
                     JSONObject jObject = new JSONObject(s);
                     JSONArray cc = jObject.getJSONArray("current_condition");
                     JSONObject current_condition = cc.getJSONObject(0);
                     JSONArray cw = jObject.getJSONArray("weather");
                     JSONObject weather = cw.getJSONObject(0);
+                    JSONArray astro = weather.getJSONArray("astronomy");
+                    JSONObject wa = astro.getJSONObject(0);
+                    String sSunrise = wa.getString("sunrise");
+                    String sSunset = wa.getString("sunset");
                     String sTemp = current_condition.getString("temp_C");
                     String sHum = current_condition.getString("humidity");
                     JSONArray cca = current_condition.getJSONArray("weatherDesc");
@@ -251,16 +280,23 @@ public class SecondFragment extends Fragment {
                     theBitmap = Bitmap.createBitmap(
                             250, 122, Bitmap.Config.ARGB_8888);
                     Canvas canvas = new Canvas(theBitmap);
-                    Paint paint = new Paint();
-                    paint.setAntiAlias(false);
+ //                   Paint paint = new Paint();
+ //                   paint.setAntiAlias(false);
                     theBitmap.eraseColor(Color.WHITE);
-                    paint.setColor(Color.BLACK);
-                    paint.setTextSize(20);
-                    canvas.drawText(sLocalTime, 0, 20, paint);
-                    paint.setTextSize(24);
-                    canvas.drawText("Temp: " + sTemp + "C (" + sMinTemp + "/" + sMaxTemp + ")", 0, 48, paint);
-                    canvas.drawText("Wind: " + sWind + "kph H: " + sHum + "%", 0, 86, paint);
-                    canvas.drawText(sDesc, 0, 116, paint);
+ //                   paint.setColor(Color.BLACK);
+ //                   paint.setTextSize(20);
+ //                   canvas.drawText(sLocalTime, 0, 20, paint);
+                    DrawBMFont(theBitmap, 0, 2, sLocalTime, bmFont16);
+ //                   paint.setTextSize(24);
+                    String sTemperature = "Temp: " + sTemp + "C (" + sMinTemp + "/" + sMaxTemp + ")";
+                    DrawBMFont(theBitmap, 0, 20, sTemperature, bmFont16);
+ //                   canvas.drawText(sTemperature, 0, 48, paint);
+                    DrawBMFont(theBitmap, 0, 40, "Wind: " + sWind + "kph Hum: " + sHum + "%", bmFont16);
+ //                   canvas.drawText("Wind: " + sWind + "kph H: " + sHum + "%", 0, 86, paint);
+                    DrawBMFont(theBitmap, 0, 60, sDesc, bmFont16);
+                    DrawBMFont(theBitmap, 0, 80, "Sunrise: " + sSunrise, bmFont16);
+                    DrawBMFont(theBitmap, 0, 100, "Sunset: " + sSunset, bmFont16);
+                    //                   canvas.drawText(sDesc, 0, 116, paint);
                     mHandler.post(new Runnable() {
                         public void run() {
                             try{
