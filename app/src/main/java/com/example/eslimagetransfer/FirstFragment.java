@@ -59,6 +59,7 @@ public class FirstFragment extends Fragment {
     ) {
 
         binding = FragmentFirstBinding.inflate(inflater, container, false);
+        eslDevice = null;
         return binding.getRoot();
 
     }
@@ -110,6 +111,8 @@ public class FirstFragment extends Fragment {
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     final BluetoothDevice device = (BluetoothDevice) listBluetoothDevice.get(position);
                     eslDevice = device; //keep this for later
+                    if (mScanning == false)
+                        binding.buttonFirst.setEnabled(true);
 //                    String msg = device.getAddress() + "\n"
 //                            + device.getBluetoothClass().toString() + "\n"
 //                            + getBTDeviceType(device);
@@ -174,7 +177,8 @@ public class FirstFragment extends Fragment {
 
                     mScanning = false;
                     binding.scan.setEnabled(true);
-                    binding.buttonFirst.setEnabled(true);
+                    if (eslDevice != null)
+                        binding.buttonFirst.setEnabled(true);
                 }
             }, SCAN_PERIOD);
 
