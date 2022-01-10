@@ -78,6 +78,16 @@ public class FirstFragment extends Fragment {
         binding.scan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Check if the adapter wasn't created at create time
+                if (mBluetoothAdapter != null && mBluetoothLeScanner == null) {
+                    mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+                    if (mBluetoothLeScanner == null) {
+                        Toast.makeText(localContext,
+                                "No permission to scan BLE",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
                 scanLeDevice(true);
             }
         });
@@ -98,7 +108,8 @@ public class FirstFragment extends Fragment {
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) localContext.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+        if (mBluetoothAdapter != null)
+            mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
         mScanning = false;
 

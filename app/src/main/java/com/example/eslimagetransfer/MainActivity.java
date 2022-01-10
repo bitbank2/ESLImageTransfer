@@ -37,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private static final int RQS_ENABLE_BLUETOOTH = 1;
     private static final int RQS_BLUETOOTH_SCAN = 2;
+    private static final int RQS_BLUETOOTH = 3;
+    private static final int RQS_FINE_LOCATION = 4;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeScanner mBluetoothLeScanner;
 
@@ -82,11 +84,35 @@ public class MainActivity extends AppCompatActivity {
 
     private void showPhoneStatePermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.BLUETOOTH)) {
+                showExplanation("Bluetooth permission Needed", "This app can only operate if BT is enabled.", Manifest.permission.BLUETOOTH_SCAN, RQS_BLUETOOTH_SCAN);
+            } else {
+                requestPermission(Manifest.permission.BLUETOOTH, RQS_BLUETOOTH);
+            }
+        } else {
+            Toast.makeText(MainActivity.this, "BT Permission (already) Granted!", Toast.LENGTH_SHORT).show();
+        }
+        permissionCheck = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+                showExplanation("Fine location permission Needed", "BLE needs fine location to work on Android.", Manifest.permission.ACCESS_FINE_LOCATION, RQS_FINE_LOCATION);
+            } else {
+                requestPermission(Manifest.permission.ACCESS_FINE_LOCATION, RQS_FINE_LOCATION);
+            }
+        } else {
+            Toast.makeText(MainActivity.this, "BT Permission (already) Granted!", Toast.LENGTH_SHORT).show();
+        }
+        permissionCheck = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.BLUETOOTH_SCAN);
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.BLUETOOTH_SCAN)) {
-                showExplanation("Permission Needed", "Rationale", Manifest.permission.BLUETOOTH_SCAN, RQS_BLUETOOTH_SCAN);
+                showExplanation("BLE Scan permission Needed", "In order to send image data to ESLs, BLE scanning is required.", Manifest.permission.BLUETOOTH_SCAN, RQS_BLUETOOTH_SCAN);
             } else {
                 requestPermission(Manifest.permission.BLUETOOTH_SCAN, RQS_BLUETOOTH_SCAN);
             }
@@ -98,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.BLUETOOTH_CONNECT)) {
-                showExplanation("Permission Needed", "Rationale", Manifest.permission.BLUETOOTH_CONNECT, RQS_BLUETOOTH_SCAN);
+                showExplanation("BLE Connect permission Needed", "In order to send image data to ESLs, BLE connection is required.", Manifest.permission.BLUETOOTH_CONNECT, RQS_BLUETOOTH_SCAN);
             } else {
                 requestPermission(Manifest.permission.BLUETOOTH_CONNECT, RQS_BLUETOOTH_SCAN);
             }
@@ -113,13 +139,22 @@ public class MainActivity extends AppCompatActivity {
             String permissions[],
             int[] grantResults) {
         switch (requestCode) {
+            case RQS_ENABLE_BLUETOOTH:
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(MainActivity.this, "BT Permission Granted!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "BT Permission Denied!", Toast.LENGTH_SHORT).show();
+                }
+                break;
             case RQS_BLUETOOTH_SCAN:
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(MainActivity.this, "Permission Granted!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "BT Scan Permission Granted!", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "Permission Denied!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "BT Scan Permission Denied!", Toast.LENGTH_SHORT).show();
                 }
+                break;
         }
     }
 
@@ -147,12 +182,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-  //      if (!mBluetoothAdapter.isEnabled()) {
-  //          if (!mBluetoothAdapter.isEnabled()) {
-  //              Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-  //              startActivityForResult(enableBtIntent, RQS_ENABLE_BLUETOOTH);
-  //          }
-  //      }
+        if (!mBluetoothAdapter.isEnabled()) {
+            if (!mBluetoothAdapter.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, RQS_ENABLE_BLUETOOTH);
+            }
+        }
     }
 
     @Override
