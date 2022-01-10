@@ -13,6 +13,9 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        targetSdkVersion 32
+        minSdkVersion 26
+        signingConfig signingConfigs.debug
     }
 
     buildTypes {
@@ -28,6 +31,12 @@ android {
     buildFeatures {
         viewBinding true
     }
+    dependenciesInfo {
+        includeInApk false
+        includeInBundle false
+    }
+    compileSdkVersion 32
+    buildToolsVersion '32.0.0'
 }
 
 dependencies {
