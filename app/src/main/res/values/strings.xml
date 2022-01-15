@@ -9,7 +9,9 @@
     <string name="sendimage">Send Image</string>
     <string name="getweather">Get Weather</string>
     <string name="scan_for_esl_devices">Scan for ESL devices</string>
-
+    <string name="add_favorite">Add to Favorites</string>
+    <string name="ble_devices">BLE Devices</string>
+    <string name="favorites">Favorites</string>
     <string name="hello_first_fragment">written by Larry Bank</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
 </resources>
